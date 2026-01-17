@@ -26,6 +26,7 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.mail.javamail.JavaMailSender mailSender;
     private final List<IValidator<? super UserCreateRequest>> registrationValidators;
     private final List<IValidator<? super UserUpdateRequest>> updateValidators;
 
@@ -51,8 +52,26 @@ public class UserServiceImpl implements IUserService {
                 .build();
 
         User savedUser = userRepository.add(user);
+        
+        sendWelcomeEmail(savedUser);
+        
         return mapToResponse(savedUser);
     }
+
+    private void sendWelcomeEmail(User user) {
+        try {
+            org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Welcome to User Management System!");
+            message.setText(String.format("Hello %s,\n\nYour account has been successfully created.\n\nBest regards,\nUser Management Team", 
+                user.getFirstName()));
+            mailSender.send(message);
+        } catch (Exception e) {
+            // Log error but don't fail registration
+            System.err.println("Failed to send welcome email: " + e.getMessage());
+        }
+    }
+
 
     @Override
     public UserResponse updateUser(String id, UserUpdateRequest request) {

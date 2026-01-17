@@ -1,0 +1,2 @@
+Implement this using Java spring boot framework (maven). Have seperate projects for each tiers and shared components. Just do the RegisterUser API End to end. I will add more API later. Use MongoDB as database.
+

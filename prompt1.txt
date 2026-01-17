@@ -1,0 +1,124 @@
+You are a software architecture and system design agent.
+
+Your task is to design and plan a 3-tier architecture application for User Management.
+⚠️ Do NOT write any code. This task is planning and design only.
+
+Architecture Requirements
+
+Design the system using the following three tiers:
+
+Tier 1 – Web API Controller
+
+Responsible only for:
+
+Handling HTTP requests and responses
+
+Request validation
+
+Mapping request/response DTOs
+
+Must not contain any business logic
+
+Depends only on service interfaces, not concrete implementations
+
+Tier 2 – Service Layer
+
+Contains all business logic related to User Management
+
+Must be:
+
+Fully unit testable
+
+Free of framework-specific dependencies where possible
+
+Uses interfaces and generics
+
+Depends only on repository interfaces
+
+Handles:
+
+Validation rules
+
+Use cases (Create User, Update User, Get User, Delete User, List Users)
+
+Transaction boundaries (conceptually)
+
+Tier 3 – Data Repository
+
+Responsible for:
+
+Data access
+
+Persistence abstraction
+
+Uses generic repository patterns
+
+Must expose data access through interfaces
+
+Should be replaceable (e.g., swap database without changing service logic)
+
+Design Constraints
+
+Use Interfaces for:
+
+Controllers → Services
+
+Services → Repositories
+
+Use Generics where applicable (e.g., base service, base repository)
+
+Follow Dependency Inversion Principle
+
+Ensure loose coupling and high cohesion
+
+Design should support:
+
+Easy unit testing (mocking services and repositories)
+
+Future extensibility
+
+User Management Scope
+
+Include planning for the following operations:
+
+Create User
+
+Update User
+
+Get User by ID
+
+List Users
+
+Delete User
+
+Also plan:
+
+Entity models
+
+DTOs
+
+Validation responsibilities
+
+Error handling strategy (conceptual)
+
+Dependency injection flow
+
+Deliverables (Planning Output Only)
+
+Provide:
+
+Layer responsibilities breakdown
+
+Interface definitions (names, responsibilities, method signatures only – no code)
+
+Generic base abstractions
+
+Dependency flow diagram (textual)
+
+Unit testing strategy for the Service layer
+
+Explanation of why this design is testable and maintainable
+
+❌ Do not include any programming language–specific code
+❌ Do not implement methods
+✅ Use clear structure, bullet points, and diagrams in text
