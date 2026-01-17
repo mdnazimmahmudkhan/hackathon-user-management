@@ -1,0 +1,37 @@
+# Maven build outputs
+**/target/
+**/logs/
+*.log
+
+# Eclipse/IntelliJ/VS Code
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Build artifacts
+*.class
+bin/
+build/
+out/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+tmp/
+
+# Environment / secrets
+.env
+*.local
+
+# Reports
+surefire-reports/
+failsafe-reports/
+coverage/
+
+# Others
+pom.xml.versionsBackup
