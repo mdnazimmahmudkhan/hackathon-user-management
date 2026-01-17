@@ -2,9 +2,12 @@ package com.example.service;
 
 import com.example.common.dto.UserCreateRequest;
 import com.example.common.dto.UserResponse;
+import com.example.common.dto.UserUpdateRequest;
 import com.example.common.entity.User;
 import com.example.common.repository.IUserRepository;
 import com.example.common.service.IUserService;
+import com.example.common.validation.IValidator;
+import com.example.service.validation.ProfileUpdateValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -22,20 +26,16 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final List<IValidator<? super UserCreateRequest>> registrationValidators;
+    private final List<IValidator<? super UserUpdateRequest>> updateValidators;
 
     @Override
     public UserResponse registerUser(UserCreateRequest request) {
-        validateRequest(request);
+        // Run registration validators
+        registrationValidators.forEach(v -> v.validate(request));
 
         String normalizedEmail = request.getEmail().trim().toLowerCase();
         String normalizedPhone = normalizePhone(request.getPhoneNumber());
-
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new RuntimeException("Email already in use");
-        }
-        if (normalizedPhone != null && userRepository.existsByPhoneNumber(normalizedPhone)) {
-            throw new RuntimeException("Phone number already in use");
-        }
 
         User user = User.builder()
                 .email(normalizedEmail)
@@ -54,56 +54,34 @@ public class UserServiceImpl implements IUserService {
         return mapToResponse(savedUser);
     }
 
-    private void validateRequest(UserCreateRequest request) {
-        // Name validation
-        validateName(request.getFirstName(), "First Name");
-        validateName(request.getLastName(), "Last Name");
+    @Override
+    public UserResponse updateUser(String id, UserUpdateRequest request) {
+        User user = userRepository.getById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Age validation (13+)
-        if (request.getDateOfBirth() != null) {
-            if (Period.between(request.getDateOfBirth(), LocalDate.now()).getYears() < 13) {
-                throw new RuntimeException("User must be at least 13 years old");
+        if (user.isDeleted()) {
+            throw new RuntimeException("Cannot update a deleted user");
+        }
+
+        // Set context for ID-aware validators (Identity checks)
+        updateValidators.forEach(v -> {
+            if (v instanceof ProfileUpdateValidator puv) {
+                puv.setCurrentUserId(id);
             }
-        }
+            v.validate(request);
+        });
 
-        // Password complexity
-        validatePassword(request.getPassword(), request.getEmail(), request.getPhoneNumber());
-    }
+        String normalizedPhone = normalizePhone(request.getPhoneNumber());
 
-    private void validateName(String name, String field) {
-        if (name == null || name.trim().length() < 2 || name.trim().length() > 50) {
-            throw new RuntimeException(field + " must be between 2 and 50 characters");
-        }
-        if (!Pattern.matches("^[a-zA-Z\\s\\-\\'\\.]+$", name)) {
-            throw new RuntimeException(field + " contains invalid characters");
-        }
-    }
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setDisplayName(request.getDisplayName());
+        user.setPhoneNumber(normalizedPhone);
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setUpdatedAt(LocalDateTime.now());
 
-    private void validatePassword(String password, String email, String phone) {
-        if (password.length() < 10) {
-            throw new RuntimeException("Password must be at least 10 characters");
-        }
-        boolean hasUpper = Pattern.compile("[A-Z]").matcher(password).find();
-        boolean hasLower = Pattern.compile("[a-z]").matcher(password).find();
-        boolean hasDigit = Pattern.compile("[0-9]").matcher(password).find();
-        boolean hasSpecial = Pattern.compile("[!@#$%^&*(),.?\":{}|<>]").matcher(password).find();
-
-        if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
-            throw new RuntimeException("Password must contain uppercase, lowercase, number, and special character");
-        }
-
-        // Substring checks
-        String emailPrefix = email.split("@")[0].toLowerCase();
-        if (password.toLowerCase().contains(emailPrefix)) {
-            throw new RuntimeException("Password cannot contain email prefix");
-        }
-
-        if (phone != null && phone.length() >= 6) {
-            String phoneSuffix = phone.substring(phone.length() - 6);
-            if (password.contains(phoneSuffix)) {
-                throw new RuntimeException("Password cannot contain mobile number substring");
-            }
-        }
+        User updatedUser = userRepository.update(user);
+        return mapToResponse(updatedUser);
     }
 
     private String normalizePhone(String phone) {
@@ -147,6 +125,23 @@ public class UserServiceImpl implements IUserService {
                 .dateOfBirth(user.getDateOfBirth())
                 .createdAt(user.getCreatedAt())
                 .active(user.isActive())
+                .build();
+    }
+
+    @Override
+    public com.example.common.dto.PaginatedResponse<UserResponse> searchUsers(String keyword, boolean includeInactive, boolean includeDeleted, int page, int size) {
+        com.example.common.dto.PaginatedResponse<User> result = userRepository.searchUsers(keyword, includeInactive, includeDeleted, page, size);
+        
+        List<UserResponse> responseItems = result.getItems().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return com.example.common.dto.PaginatedResponse.<UserResponse>builder()
+                .items(responseItems)
+                .totalItems(result.getTotalItems())
+                .totalPages(result.getTotalPages())
+                .currentPage(result.getCurrentPage())
+                .pageSize(result.getPageSize())
                 .build();
     }
 }

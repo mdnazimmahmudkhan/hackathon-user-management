@@ -2,16 +2,17 @@ package com.example.common.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserCreateRequest {
+@EqualsAndHashCode(callSuper = true)
+public class UserCreateRequest extends UserBaseRequest {
     @NotBlank
     @Email
     private String email;
@@ -19,16 +20,4 @@ public class UserCreateRequest {
     @NotBlank
     @Size(min = 10)
     private String password;
-
-    @NotBlank
-    @Size(min = 2, max = 50)
-    private String firstName;
-
-    @NotBlank
-    @Size(min = 2, max = 50)
-    private String lastName;
-
-    private String displayName;
-    private String phoneNumber;
-    private LocalDate dateOfBirth;
 }

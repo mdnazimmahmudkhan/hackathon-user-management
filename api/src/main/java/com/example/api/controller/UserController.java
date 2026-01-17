@@ -2,6 +2,7 @@ package com.example.api.controller;
 
 import com.example.common.dto.UserCreateRequest;
 import com.example.common.dto.UserResponse;
+import com.example.common.dto.UserUpdateRequest;
 import com.example.common.service.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,24 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> update(@PathVariable String id, @Valid @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getById(@PathVariable String id) {
         return ResponseEntity.ok(userService.getUserById(id));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<com.example.common.dto.PaginatedResponse<UserResponse>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "false") boolean includeInactive,
+            @RequestParam(defaultValue = "false") boolean includeDeleted,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.searchUsers(keyword, includeInactive, includeDeleted, page, size));
     }
 
     @GetMapping

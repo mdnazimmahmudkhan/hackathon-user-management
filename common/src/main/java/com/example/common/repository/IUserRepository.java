@@ -11,4 +11,11 @@ public interface IUserRepository extends IRepository<User, String> {
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    com.example.common.dto.PaginatedResponse<User> searchUsers(
+            String keyword,
+            boolean includeInactive,
+            boolean includeDeleted,
+            int page,
+            int size);
 }
